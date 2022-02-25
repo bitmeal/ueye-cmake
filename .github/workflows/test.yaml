@@ -76,6 +76,7 @@ jobs:
       # SDK setup
       - name: Setup SDK Windows
         if: startsWith(matrix.os, 'windows')
+        shell: cmd
         env:
           SDK_ROOT: SDK
         working-directory: SDK
@@ -83,7 +84,7 @@ jobs:
           7z x ueye.archive
           move uEye*.exe ueye_installer.exe
           dir
-          START /B /WAIT ueye_installer.exe /S /insttype=Developer
+          START "" /WAIT /B ueye_installer.exe /S /insttype=Developer
       - name: Setup SDK Ubuntu
         if: startsWith(matrix.os, 'ubuntu')
         env:

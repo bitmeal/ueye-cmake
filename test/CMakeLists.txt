@@ -16,6 +16,7 @@ set (CMAKE_MODULE_PATH ${PROJECT_ROOT})
 
 # find SDK with or without specific version
 if(DEFINED SDK-VERSION)
+    message(STATUS "SDK-VERSION set; searching for uEye-SDK version: ${SDK-VERSION}")
     find_package( uEye-SDK ${SDK-VERSION} REQUIRED )
 else()
     find_package( uEye-SDK REQUIRED )

@@ -112,11 +112,21 @@ IF(NOT uEye-SDK_FOUND)
                         STRING(REGEX MATCH "[0-9.]+" uEye-SDK_VERSION "${uEye-SDK_VERSION_DEFINE}")
                 ELSE() # is *NIX like
                         # read version from library filesystem link and string in shared library matching an approx semver string
-			FILE(GLOB uEye-SDK_LIBRARY_VERSIONED "${uEye-SDK_LIBRARIES}.[0-9].*")
-			STRING(REPLACE "${uEye-SDK_LIBRARIES}." "" uEye-SDK_VERSION_COARSE "${uEye-SDK_LIBRARY_VERSIONED}")
-			FILE(STRINGS ${uEye-SDK_LIBRARIES} uEye-SDK_VERSION REGEX "^${uEye-SDK_VERSION_COARSE}\\.[0-9]+\\.[0-9]+$")
-		ENDIF() # end plattform specific version detection mechanism
-
+                        STRING(REPLACE ".so" "" uEye-SDK_LIBRARY_STRIP "${uEye-SDK_LIBRARIES}")
+                        FILE(GLOB uEye-SDK_LIBRARY_VERSIONED "${uEye-SDK_LIBRARY_STRIP}*.so.[0-9].*")
+                        STRING(REGEX REPLACE "^.*\.so\." "" uEye-SDK_VERSION_MINOR "${uEye-SDK_LIBRARY_VERSIONED}")
+                        FILE(STRINGS ${uEye-SDK_LIBRARIES} uEye-SDK_VERSION_LIST_TWIST REGEX "^${uEye-SDK_VERSION_MINOR}\\.[0-9]+\\.[0-9]+$")
+                        FILE(STRINGS ${uEye-SDK_LIBRARIES} uEye-SDK_VERSION_LIST_PATCH REGEX "^${uEye-SDK_VERSION_MINOR}\\.[0-9]+$")
+                        IF(uEye-SDK_VERSION_LIST_TWIST)
+                                LIST(GET uEye-SDK_VERSION_LIST_TWIST 0 uEye-SDK_VERSION_TWIST)
+                                SET(uEye-SDK_VERSION "${uEye-SDK_VERSION_TWIST}")
+                        ELSEIF(uEye-SDK_VERSION_LIST_PATCH)
+                                LIST(GET uEye-SDK_VERSION_LIST_PATCH 0 uEye-SDK_VERSION_PATCH)
+                                SET(uEye-SDK_VERSION "${uEye-SDK_VERSION_PATCH}")
+                        ELSE()
+                                SET(uEye-SDK_VERSION "${uEye-SDK_VERSION_MINOR}")
+                        ENDIF()
+                ENDIF() # end plattform specific version detection mechanism
                 # handled by FIND_PACKAGE_HANDLE_STANDARD_ARGS
                 # # FOUND EVERYTHING WE NEED
                 # SET (uEye-SDK_FOUND TRUE)
