@@ -19,7 +19,7 @@ Requesting version requirements is supported. Currently no support for handling 
 > 📌 Old and new **NIX* install-locations are supported
 
 ## exported library targets
-* `uEye-SKD`
+* `uEye-SDK`
 > 📌 Library target includes link directories
 
 ## exported variables
