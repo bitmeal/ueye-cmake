@@ -1,0 +1,123 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        build_type: [Release, Debug]
+        include:
+          - os: windows-latest
+            version: 4.95.1
+            sdk_uri: https://de.ids-imaging.com/files/downloads/ids-software-suite/software/windows/ids-software-suite-win-4.95.1.zip
+          # - os: windows-latest
+          #   version: 4.81
+          #   sdk_uri: https://en.ids-imaging.com/files/downloads/ids-software-suite/software/windows/uEye-Full-481-64-WHQL.zip
+          - os: ubuntu-latest
+            version: 4.95.1
+            sdk_uri: https://de.ids-imaging.com/files/downloads/ids-software-suite/software/linux-desktop/ids-software-suite-linux-64-4.95.1-archive.zip
+          - os: ubuntu-latest
+            version: 4.81
+            sdk_uri: https://en.ids-imaging.com/files/downloads/ids-software-suite/software/linux-desktop/uEye-Linux-4.81-64-bit.tgz
+
+    steps:
+      - uses: actions/checkout@v2
+
+
+      ###############################################
+      # toolchain setup
+      - name: Setup Toolchain Windows
+        if: startsWith(matrix.os, 'windows')
+        run: |
+          choco install -y ninja
+          ninja --version
+          cmake --version
+
+      - name: Setup Toolchain Ubuntu
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+          ninja --version
+          cmake --version
+
+
+      ###############################################
+      # prepare SDK setup
+      - name: Prepare SDK Setup
+        shell: bash
+        env:
+          SDK_ROOT: SDK
+        run: |
+          mkdir -p ${SDK_ROOT}
+      - name: Fetch SDK
+        shell: bash
+        env:
+          SDK_ROOT: SDK
+        run: |
+          curl -L -o ${SDK_ROOT}/ueye.archive ${{ matrix.sdk_uri }}
+
+
+      ###############################################
+      # SDK setup
+      - name: Setup SDK Windows
+        if: startsWith(matrix.os, 'windows')
+        env:
+          SDK_ROOT: SDK
+        working-directory: SDK
+        run: |
+          7z x ueye.archive
+          move uEye*.exe ueye_installer.exe
+          START /B /WAIT ueye_installer.exe /S /insttype=Developer
+      - name: Setup SDK Ubuntu
+        if: startsWith(matrix.os, 'ubuntu')
+        env:
+          SDK_ROOT: SDK
+        run: |
+          while [ -z "$(find ${SDK_ROOT} -iname '*.run')" ]; do
+                  if [ -z $(find ${SDK_ROOT} -type f) ]; then
+                          echo ERROR nothing to unpack!
+                          exit 1
+                  fi
+                  OLD_ARCHIVES="$(find ${SDK_ROOT} -type f)"
+                  printf '%s' "${OLD_ARCHIVES}" | xargs -d '\n' -i sh -c '7z x -o$(dirname {} ) {}' || true
+                  printf '%s' "${OLD_ARCHIVES}" | xargs -d '\n' -i rm {}
+                  unset OLD_ARCHIVES
+          done
+          find ${SDK_ROOT} -iname '*usb*.run' -exec rm {} \;
+          find ${SDK_ROOT} -iname '*.run' -exec sh -c 'chmod +x {} && yes | {} ' \;
+
+      ###############################################
+      # finalize SDK setup
+      - name: Cleanup SDK Setup
+        shell: bash
+        env:
+          SDK_ROOT: SDK
+        run: |
+          rm -rf ${SDK_ROOT}
+
+      ###############################################
+      # build and run tests
+      - name: Configure
+        working-directory: test
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -G Ninja
+
+      - name: Build
+        working-directory: test
+        run: |
+          cmake --build build --config ${{ matrix.build_type }}
+
+      - name: Test
+        working-directory: test
+        run: |
+          cmake --build build --config ${{ matrix.build_type }} --target test
+
