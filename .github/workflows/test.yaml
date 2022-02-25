@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    name: ${{ matrix.os }}
+    name: "${{ matrix.version }}@${{ matrix.os }}-[${{ matrix.build_type }}]"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -83,7 +83,6 @@ jobs:
         run: |
           7z x ueye.archive
           move uEye*.exe ueye_installer.exe
-          dir
           START "" /WAIT /B ueye_installer.exe /S /insttype=Developer
       - name: Setup SDK Ubuntu
         if: startsWith(matrix.os, 'ubuntu')
