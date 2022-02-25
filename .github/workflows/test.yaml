@@ -14,19 +14,25 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
         build_type: [Release, Debug]
+        # test "current" and "old" versions; does only really matter for Linux, as Windows layout has not changed
+        version: [4.95.1, 4.81]
         include:
-          - os: windows-latest
-            version: 4.95.1
-            sdk_uri: https://de.ids-imaging.com/files/downloads/ids-software-suite/software/windows/ids-software-suite-win-4.95.1.zip
-          # - os: windows-latest
-          #   version: 4.81
-          #   sdk_uri: https://en.ids-imaging.com/files/downloads/ids-software-suite/software/windows/uEye-Full-481-64-WHQL.zip
           - os: ubuntu-latest
             version: 4.95.1
             sdk_uri: https://de.ids-imaging.com/files/downloads/ids-software-suite/software/linux-desktop/ids-software-suite-linux-64-4.95.1-archive.zip
           - os: ubuntu-latest
             version: 4.81
             sdk_uri: https://en.ids-imaging.com/files/downloads/ids-software-suite/software/linux-desktop/uEye-Linux-4.81-64-bit.tgz
+          - os: windows-latest
+            version: 4.95.1
+            sdk_uri: https://de.ids-imaging.com/files/downloads/ids-software-suite/software/windows/ids-software-suite-win-4.95.1.zip
+          # - os: windows-latest
+          #   version: 4.81
+          #   sdk_uri: https://en.ids-imaging.com/files/downloads/ids-software-suite/software/windows/uEye-Full-481-64-WHQL.zip
+        exclude:
+          - # silent install not sane; directory layout and naming did not change across versions though
+            os: windows-latest
+            version: 4.81
 
     steps:
       - uses: actions/checkout@v2
@@ -76,6 +82,7 @@ jobs:
         run: |
           7z x ueye.archive
           move uEye*.exe ueye_installer.exe
+          dir
           START /B /WAIT ueye_installer.exe /S /insttype=Developer
       - name: Setup SDK Ubuntu
         if: startsWith(matrix.os, 'ubuntu')
@@ -93,7 +100,7 @@ jobs:
                   unset OLD_ARCHIVES
           done
           find ${SDK_ROOT} -iname '*usb*.run' -exec rm {} \;
-          find ${SDK_ROOT} -iname '*.run' -exec sh -c 'chmod +x {} && yes | {} ' \;
+          find ${SDK_ROOT} -iname '*.run' -exec sudo sh -c 'chmod +x {} && yes | {} ' \;
 
       ###############################################
       # finalize SDK setup
