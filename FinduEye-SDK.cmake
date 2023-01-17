@@ -89,6 +89,8 @@ IF(NOT uEye-SDK_FOUND)
                                         "lib64/"
                                         "i386-linux-gnu/"
                                         "x86_64-linux-gnu/"
+                                        "lib/i386-linux-gnu/"
+                                        "lib/x86_64-linux-gnu/"
                 )
 
         ENDIF() # end plattform specific code
